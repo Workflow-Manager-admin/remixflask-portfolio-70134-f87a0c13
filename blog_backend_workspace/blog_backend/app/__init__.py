@@ -1,11 +1,12 @@
 from flask import Flask
 from flask_cors import CORS
 from .routes.health import blp
-from .routes.blog import blp as blog_blp
+from .routes.blog import blp as blog_blp, blp_api
 from flask_smorest import Api
 
 
 app = Flask(__name__)
+# Enable CORS for all blueprints — particularly needed for /api/blog endpoints with frontend
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config["API_TITLE"] = "My Flask API"
 app.config["API_VERSION"] = "v1"
@@ -18,3 +19,4 @@ app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-
 api = Api(app)
 api.register_blueprint(blp)
 api.register_blueprint(blog_blp)
+api.register_blueprint(blp_api)

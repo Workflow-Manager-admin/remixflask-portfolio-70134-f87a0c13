@@ -2,9 +2,10 @@ import os
 import glob
 import markdown
 from flask_smorest import Blueprint
-from flask.views import MethodView
 from flask import jsonify
+from flask.views import MethodView
 from datetime import datetime
+from flask_smorest import Blueprint as SmorestBlueprint
 
 
 # PUBLIC_INTERFACE
@@ -65,7 +66,7 @@ def load_markdown_posts(data_dir):
                         if ":" in line:
                             k, v = line.split(":", 1)
                             meta[k.strip().lower()] = v.strip()
-                    body = text[fm_end + 3 :].lstrip()
+                    body = text[fm_end + 3:].lstrip()
             except Exception:
                 pass
 
@@ -105,6 +106,54 @@ blp = Blueprint(
     description="Blog post APIs"
 )
 
+blp_api = SmorestBlueprint(
+    "BlogAPI",
+    "blog_api",
+    url_prefix="/api/blog",
+    description="REST API endpoints for blog posts",
+)
+
+
+# PUBLIC_INTERFACE
+@blp_api.route("/", methods=["GET"])
+class BlogPostListAPI(MethodView):
+    """
+    PUBLIC_INTERFACE
+    GET /api/blog
+    Returns a JSON list of all blog post metadata (summaries, no content).
+    Response: [{"slug": ..., "title": ..., "date": ..., "summary": ...}]
+    """
+
+    def get(self):
+        # Return metadata for all posts, latest first
+        posts = sorted(BLOG_POSTS.values(), key=lambda p: p.date, reverse=True)
+        summaries = [p.to_dict(include_content=False) for p in posts]
+        return jsonify(summaries), 200
+
+
+# PUBLIC_INTERFACE
+@blp_api.route("/<string:slug>", methods=["GET"])
+class BlogPostDetailsAPI(MethodView):
+    """
+    PUBLIC_INTERFACE
+    GET /api/blog/<slug>
+    Returns the post's full metadata and markdown/html content.
+    Response: {"slug": ..., "title": ..., "date": ..., "summary": ..., "content_markdown": ..., "content_html": ...}
+    """
+
+    def get(self, slug):
+        post = BLOG_POSTS.get(slug)
+        if post is None:
+            return jsonify(
+                {
+                    "error": (
+                        "Blog post with slug '{}' not found."
+                        .format(slug)
+                    )
+                }
+            ), 404
+        return jsonify(post.to_dict(include_content=True)), 200
+
 
 @blp.route("/")
 class BlogPostList(MethodView):
@@ -134,7 +183,9 @@ class BlogPostDetails(MethodView):
     def get(self, slug):
         post = BLOG_POSTS.get(slug)
         if post is None:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify(
+                {"error": "Not found"}
+            ), 404
         return jsonify(post.to_dict(include_content=True))
 
 
