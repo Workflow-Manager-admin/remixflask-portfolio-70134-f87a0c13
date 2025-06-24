@@ -1,0 +1,4 @@
+{
+    "command": "npm run dev -- --port <port>",
+    "working_directory": "/home/kavia/workspace/code-generation/remixflask-portfolio-70134-f87a0c13/portfolio_frontend_workspace/portfolio_frontend"
+}
